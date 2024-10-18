@@ -1,0 +1,94 @@
+next is player2: teamAgent
+
+winner is 2 in 92
+winner is 2 in 76
+winner is 2 in 78
+stuck
+stuck
+winner is 2 in 90
+stuck
+winner is 2 in 70
+winner is 2 in 96
+stuck
+winner is 2 in 86
+winner is 2 in 86
+winner is 2 in 104
+winner is 2 in 82
+winner is 2 in 82
+winner is 2 in 92
+stuck
+winner is 2 in 82
+winner is 2 in 76
+winner is 2 in 86
+winner is 2 in 88
+stuck
+winner is 2 in 102
+stuck
+winner is 2 in 90
+stuck
+stuck
+winner is 2 in 110
+winner is 2 in 86
+winner is 2 in 100
+
+next is player1: teamAgent
+
+winner is 1 in 91
+winner is 1 in 85
+winner is 1 in 73
+winner is 1 in 79
+winner is 1 in 83
+winner is 1 in 75
+stuck
+winner is 1 in 71
+winner is 1 in 89
+winner is 1 in 77
+winner is 1 in 95
+winner is 1 in 109
+winner is 1 in 101
+stuck
+winner is 1 in 115
+winner is 1 in 65
+winner is 1 in 109
+winner is 1 in 79
+winner is 1 in 93
+winner is 1 in 89
+winner is 1 in 95
+winner is 1 in 85
+winner is 1 in 79
+winner is 1 in 85
+winner is 1 in 69
+winner is 1 in 79
+winner is 1 in 83
+winner is 1 in 81
+winner is 1 in 77
+winner is 1 in 99
+
+next is player1: teamAgent
+
+winner is 2 in 102
+winner is 2 in 92
+winner is 1 in 121
+winner is 2 in 88
+winner is 2 in 84
+winner is 2 in 140
+winner is 1 in 97
+stuck
+winner is 2 in 84
+winner is 2 in 88
+winner is 1 in 101
+winner is 2 in 88
+winner is 1 in 95
+winner is 1 in 91
+winner is 2 in 100
+stuck
+winner is 1 in 99
+stuck
+winner is 2 in 102
+winner is 2 in 110
+winner is 2 in 94
+winner is 1 in 119
+stuck
+stuck
+winner is 2 in 100
+winner is 2 in 90
