@@ -22,13 +22,13 @@ def parse_args():
         help="seed of the experiment")
     parser.add_argument("--total-timesteps", type=int, default=500000,
         help="total timesteps of the experiments")
-    parser.add_argument("--learning-rate", type=float, default=2.5e-4,
+    parser.add_argument("--learning-rate", type=float, default=1e-3,
         help="the learning rate of the optimizer")
-    parser.add_argument("--buffer-size", type=int, default=10000,
+    parser.add_argument("--buffer-size", type=int, default=1000,
         help="the replay memory buffer size")
-    parser.add_argument("--gamma", type=float, default=0.6,
+    parser.add_argument("--gamma", type=float, default=0.99,
         help="the discount factor gamma")
-    parser.add_argument("--target-network-frequency", type=int, default=500,
+    parser.add_argument("--target-network-frequency", type=int, default=100,
         help="the timesteps it takes to update the target network")
     parser.add_argument("--batch-size", type=int, default=128,
         help="the batch size of sample from the reply memory")
@@ -56,7 +56,13 @@ def make_env(env_id, seed):
     return env
 
 class QNetwork(nn.Module):
-    """comments: """
+    """
+    The Neural Network:
+    Linear -> ReLU -> Linear -> ReLU -> Linear.
+    The input dimension is the observation space of the environment.
+    The output dimension is the action space of the environment.
+    And the hidden dimensions are 120 and 84.
+    """
     def __init__(self, env):
         super().__init__()
         self.network = nn.Sequential(
@@ -71,7 +77,9 @@ class QNetwork(nn.Module):
         return self.network(x)
 
 def linear_schedule(start_e: float, end_e: float, duration: int, t: int):
-    """comments: """
+    """
+    Linear interpolation between start_e and end_e
+    """
     slope = (end_e - start_e) / duration
     return max(slope * t + start_e, end_e)
 
@@ -88,23 +96,37 @@ if __name__ == "__main__":
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
     )
     
-    """comments: """
+    """
+    Set the random seed for reproducibility.
+    Use the device (cpu or cuda) for the computation.
+    """
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = True
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    """comments: """
+    """
+    Construct the environment using the random seed.
+    """
     envs = make_env(args.env_id, args.seed)
 
-    """comments: """
+    """
+    Construct the Q-network, the optimizer, the target network.
+    Only the parameters of the Q-network need to be optimized.
+    The parameters of the Q-network are copied to the target network periodically.
+    The optimizer is Adam with the learning rate.
+    """
     q_network = QNetwork(envs).to(device)
     optimizer = optim.Adam(q_network.parameters(), lr=args.learning_rate)
     target_network = QNetwork(envs).to(device)
     target_network.load_state_dict(q_network.state_dict())
 
-    """comments: """
+    """
+    Construct the replay buffer.
+    The sampled samples are dropped into ReplayBuffer.
+    When the number of samples reaches a certain threshold, an update will be made using the data in ReplayBuffer.
+    """
     rb = ReplayBuffer(
         args.buffer_size,
         envs.observation_space,
@@ -113,21 +135,30 @@ if __name__ == "__main__":
         handle_timeout_termination=False,
     )
 
-    """comments: """
+    """
+    The training loop.
+    Reset the environment.
+    """
     obs = envs.reset()
     for global_step in range(args.total_timesteps):
         
-        """comments: """
+        """
+        Linearly decay the epsilon value.
+        """
         epsilon = linear_schedule(args.start_e, args.end_e, args.exploration_fraction * args.total_timesteps, global_step)
         
-        """comments: """
+        """
+        Select the action using epsilon-greedy.
+        """
         if random.random() < epsilon:
             actions = envs.action_space.sample()
         else:
             q_values = q_network(torch.Tensor(obs).to(device))
             actions = torch.argmax(q_values, dim=0).cpu().numpy()
         
-        """comments: """
+        """
+        Execute the action in the environment and get the next observation, reward, done, and info.
+        """
         next_obs, rewards, dones, infos = envs.step(actions)
         # envs.render() # close render during training
         
@@ -136,38 +167,69 @@ if __name__ == "__main__":
             writer.add_scalar("charts/episodic_return", infos["episode"]["r"], global_step)
             writer.add_scalar("charts/episodic_length", infos["episode"]["l"], global_step)
         
-        """comments: """
+        """
+        Add the transition to the replay buffer.
+        """
         rb.add(obs, next_obs, actions, rewards, dones, infos)
         
-        """comments: """
+        """
+        Update the observation if the episode is not done.
+        Otherwise, reset the environment.
+        """
         obs = next_obs if not dones else envs.reset()
         
         if global_step > args.learning_starts and global_step % args.train_frequency == 0:
             
-            """comments: """
+            """
+            Sample a batch of transitions from the replay buffer.
+            """
             data = rb.sample(args.batch_size)
             
-            """comments: """
+            """
+            Forced not to calculate the gradients.
+            Use MSE loss to update the Q-network.
+            """
             with torch.no_grad():
                 target_max, _ = target_network(data.next_observations).max(dim=1)
                 td_target = data.rewards.flatten() + args.gamma * target_max * (1 - data.dones.flatten())
             old_val = q_network(data.observations).gather(1, data.actions).squeeze()
             loss = F.mse_loss(td_target, old_val)
 
-            """comments: """
+            """
+            Log the loss and the Q-values every 100 steps.
+            """
             if global_step % 100 == 0:
                 writer.add_scalar("losses/td_loss", loss, global_step)
                 writer.add_scalar("losses/q_values", old_val.mean().item(), global_step)
             
-            """comments: """
+            """
+            Clear the past gradients.
+            Back propagate the loss.
+            Update the parameters of the Q-network.
+            """
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             
-            """comments: """
+            """
+            Update the target network every `target_network_frequency` steps.
+            """
             if global_step % args.target_network_frequency == 0:
                 target_network.load_state_dict(q_network.state_dict())
     
     """close the env and tensorboard logger"""
+
+
+    # show the result of DQN
+    obs = envs.reset()
+    envs.render()
+    while True:
+        q_values = q_network(torch.Tensor(obs).to(device))
+        actions = torch.argmax(q_values, dim=0).cpu().numpy()
+        next_obs, rewards, dones, infos = envs.step(actions)
+        envs.render()
+        if dones:
+            break
+        obs = next_obs
     envs.close()
     writer.close()
