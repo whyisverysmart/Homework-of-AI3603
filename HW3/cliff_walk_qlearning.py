@@ -32,6 +32,8 @@ agent = QLearningAgent(all_actions,
 
 # For episode_reward visualization
 reward_list = []
+# For epsilon visualization
+epsilon_list = []
 
 # start training
 for episode in range(1000):
@@ -62,6 +64,12 @@ for episode in range(1000):
     # agent.epsilon -= 0.001
     agent.alpha *= 0.99
     agent.epsilon *= 0.99
+    epsilon_list.append(agent.epsilon)
+
+    # Efficiency
+#     if episode_reward == -13:
+#         break
+# print("episode:", episode)
 
 print('\ntraining over\n')
 
@@ -70,6 +78,13 @@ plt.plot(range(1000), reward_list)
 plt.xlabel('Episode')
 plt.ylabel('Episode Reward')
 plt.title('Episode Reward over Time')
+plt.show()
+
+# Epsilon visualization
+plt.plot(range(1000), epsilon_list)
+plt.xlabel('Episode')
+plt.ylabel('Epsilon')
+plt.title('Epsilon over Time')
 plt.show()
 
 # Final path visualization

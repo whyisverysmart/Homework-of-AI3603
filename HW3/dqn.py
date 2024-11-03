@@ -70,6 +70,10 @@ class QNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(120, 84),
             nn.ReLU(),
+            # nn.Linear(120, 100),
+            # nn.ReLU(),
+            # nn.Linear(100, 84),
+            # nn.ReLU(),
             nn.Linear(84, env.action_space.n),
         )
 
@@ -216,20 +220,21 @@ if __name__ == "__main__":
             """
             if global_step % args.target_network_frequency == 0:
                 target_network.load_state_dict(q_network.state_dict())
-    
     """close the env and tensorboard logger"""
 
-
     # show the result of DQN
-    obs = envs.reset()
-    envs.render()
-    while True:
-        q_values = q_network(torch.Tensor(obs).to(device))
-        actions = torch.argmax(q_values, dim=0).cpu().numpy()
-        next_obs, rewards, dones, infos = envs.step(actions)
+    for _ in range(10):
+        obs = envs.reset()
         envs.render()
-        if dones:
-            break
-        obs = next_obs
+        while True:
+            q_values = q_network(torch.Tensor(obs).to(device))
+            actions = torch.argmax(q_values, dim=0).cpu().numpy()
+            next_obs, rewards, dones, infos = envs.step(actions)
+            envs.render()
+            if dones:
+                break
+            obs = next_obs
+        time.sleep(1)
+
     envs.close()
     writer.close()

@@ -63,6 +63,11 @@ for episode in range(1000):
     agent.alpha *= 0.99
     agent.epsilon *= 0.99
 
+    # Efficiency
+#     if episode_reward == -13:
+#         break
+# print("episode:", episode)
+
 print('\ntraining over\n')
 
 # Episode_reward visualization
