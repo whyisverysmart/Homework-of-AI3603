@@ -1,4 +1,4 @@
-from model import Unet, GaussianDiffusion
+from model import Unet,GaussianDiffusion
 from trainer import Trainer
 import torch
 torch.backends.cudnn.benchmark = True
@@ -8,19 +8,29 @@ torch.backends.cudnn.benchmark = True
 #   torch.cuda.manual_seed(4096)
 
 
-path = './Data/temp'
+path = './Data/resized'
 IMG_SIZE = 64             # Size of images, do not change this if you do not know why you need to change
-batch_size =16
-train_num_steps = 10000 # 30000       # total training steps
+batch_size = 128
+train_num_steps = 40000        # total training steps
 lr = 1e-3
 grad_steps = 1            # gradient accumulation steps, the equivalent batch size for updating equals to batch_size * grad_steps = 16 * 1
-ema_decay = 0.995           # exponential moving average decay
+ema_decay = 0.997           # exponential moving average decay
 
-channels = 16             # Numbers of channels of the first layer of CNN
+channels = 128             # Numbers of channels of the first layer of CNN
 dim_mults = (1, 2, 4)        # The model size will be (channels, 2 * channels, 4 * channels, 4 * channels, 2 * channels, channels)
 
-timesteps = 1000            # Number of steps (adding noise)
+timesteps = 2000            # Number of steps (adding noise)
 beta_schedule = 'linear'
+
+
+print("batch_size: ",batch_size)
+print("train_num_steps: ",train_num_steps)
+print("lr: ",lr)
+print("grad_steps: ",grad_steps)
+print("ema_decay: ",ema_decay)
+print("channels: ",channels)
+print("dim_mults: ",dim_mults)
+print("timesteps: ",timesteps)
 
 model = Unet(
     dim = channels,
@@ -42,8 +52,8 @@ trainer = Trainer(
     train_num_steps = train_num_steps,
     gradient_accumulate_every = grad_steps,
     ema_decay = ema_decay,
-    save_and_sample_every = 1000,
-    results_folder="./resultsCAT"
+    save_and_sample_every = 8000,
+    results_folder="./model_results"
 )
 
 print(trainer.device)
@@ -51,9 +61,16 @@ print(trainer.device)
 # Train
 trainer.train()
 
-ckpt = './resultsCAT/model-10.pt'
+
+# Require changing along with hyperparameters
+ckpt = f'./model_results/model-{train_num_steps//8000}.pt'
+# ckpt = "./model_results/10000_7e-5_1500/model-4.pt"
+# ckpt = f'./model_results/body/model-5.pt'
 trainer.load(ckpt)
 # Random generation
-trainer.inference(output_path="./submission")
+trainer.inference(output_path="./random_gen")
+print("Random generation (inference) done")
 # Fusion generation
-trainer.inference2(lamda=0.5,index1=9000,index2=8888,output_path="./fusion",source_path='./source')
+# for i in range(50):
+#     trainer.inference2(lamda=0.5,index1=9000+i,index2=8888+i,output_path="./fusion_gen/fusion",source_path='./fusion_gen/source')
+# print("Fusion generation (inference2) done")

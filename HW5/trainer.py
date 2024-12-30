@@ -1,6 +1,5 @@
 import math
 from pathlib import Path
-from multiprocessing import cpu_count
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -82,7 +81,7 @@ class Trainer(object):
         adam_betas = (0.9, 0.99),
         save_and_sample_every = 1000,
         num_samples = 25,
-        results_folder = './resultsCAT',
+        results_folder = './model_results',
         split_batches = True,
         inception_block_idx = 2048
     ):
@@ -116,7 +115,6 @@ class Trainer(object):
         # dataset and dataloader
 
         self.ds = Dataset(folder, self.image_size)
-        # dl = DataLoader(self.ds, batch_size = train_batch_size, shuffle = True, pin_memory = True, num_workers = cpu_count())
         dl = DataLoader(self.ds, batch_size = train_batch_size, shuffle = False, pin_memory = True)
 
         dl = self.accelerator.prepare(dl)
@@ -185,6 +183,7 @@ class Trainer(object):
         device = accelerator.device
 
         with tqdm(initial = self.step, total = self.train_num_steps, disable = not accelerator.is_main_process) as pbar:
+            last_update = self.step
 
             while self.step < self.train_num_steps:
 
@@ -201,7 +200,6 @@ class Trainer(object):
                     self.accelerator.backward(loss)
 
                 accelerator.clip_grad_norm_(self.model.parameters(), 1.0)
-                pbar.set_description(f'loss: {total_loss:.4f}')
 
                 accelerator.wait_for_everyone()
 
@@ -228,13 +226,16 @@ class Trainer(object):
                         
                         self.save(milestone)
 
-                pbar.update(1)
+                if self.step % 200 == 0:
+                    pbar.set_description(f'loss: {total_loss:.4f}')
+                    pbar.update(self.step - last_update)
+                    last_update = self.step
 
         accelerator.print('training complete')
         
-    def inference(self, num=1000, n_iter=100, output_path='./submission'):
+    def inference(self, num=1000, n_iter=100, output_path='./random_gen'):
         if not os.path.exists(output_path):
-            os.mkdir(output_path)
+            os.makedirs(output_path)
         with torch.no_grad():
             for i in range(n_iter):
                 batches = num_to_groups(num // n_iter, 10)
@@ -244,11 +245,11 @@ class Trainer(object):
 
     def inference2(self, num=1, n_iter=1, lamda=0.5,index1=1,index2=2,output_path='./fusion',source_path = './source'):
         if not os.path.exists(output_path):
-            os.mkdir(output_path)
+            os.makedirs(output_path)
         with torch.no_grad():
             batches = num_to_groups(num // n_iter, 1)
             all_images = list(map(lambda n: self.ema.ema_model.sample2(batch_size=n,lamda=lamda,index1=index1,index2=index2), batches))[0]
-            torchvision.utils.save_image(all_images, f'{output_path}/{index1}_{index2}.jpg')                
+            torchvision.utils.save_image(all_images, f'{output_path}/{index1}_{index2}.jpg')
             os.makedirs(source_path,exist_ok=True)
-            shutil.copy(f'./Data/cat_{index1}.png', source_path)
-            shutil.copy(f'./Data/cat_{index2}.png', source_path)
+            shutil.copy(f'./Data/faces/cat_{index1:0{5}}.jpg', source_path)
+            shutil.copy(f'./Data/faces/cat_{index2:0{5}}.jpg', source_path)
