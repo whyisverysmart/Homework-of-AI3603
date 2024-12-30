@@ -67,17 +67,20 @@ The FID score is **18.707184981213345**
 
 The parameter lambda is set to **0.5**, trying to get the exact average feature of the two cat faces.
 
+As the source images exist many black cats, the fusion image of two dark-hair cats is not satisfying. Thus, 
+I manually selected 50 pairs of cats that are not both black.
+
 Here are some quite satisfying results:
 
-![faces](./report_imgs/9006_8894.jpg "faces")
+![faces](./fusion/9002_8890.jpg "faces")
 
-![faces](./report_imgs/9007_8895.jpg "faces")
+![faces](./fusion/9007_8895.jpg "faces")
 
-![faces](./report_imgs/9018_8906.jpg "faces")
+![faces](./fusion/9034_8922.jpg "faces")
 
-![faces](./report_imgs/9023_8911.jpg "faces")
+![faces](./fusion/9066_8954.jpg "faces")
 
-The FID score is **106.21884595265362**
+The FID score is **70.54680137714281**
 
 ## Task 3
 
